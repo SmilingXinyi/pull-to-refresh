@@ -1,0 +1,26 @@
+{
+  "name": "pull-to-refresh",
+  "version": "1.0.0",
+  "description": "webapp's pull to refresh feature",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SmilingXinyi/pull-to-refresh.git"
+  },
+  "keywords": [
+    "pulltorefresh"
+  ],
+  "author": "Blaite",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SmilingXinyi/pull-to-refresh/issues"
+  },
+  "homepage": "https://github.com/SmilingXinyi/pull-to-refresh#readme",
+  "devDependencies": {
+    "systemjs": "^0.20.17",
+    "systemjs-plugin-babel": "0.0.25"
+  }
+}
