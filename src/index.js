@@ -127,7 +127,7 @@ export function PullToRefresh(element, opts) {
                 ptrInDom.innerHTML = options.corsssDistHtml;
             }
 
-            options.onPulling();
+            options.onPulling(moveY);
 
             const style =
                 '-webkit-transform: translate3d(0px, ' + Math.floor(moveY).toString() + 'px, 0px); ' +
