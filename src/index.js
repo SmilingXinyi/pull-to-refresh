@@ -36,9 +36,14 @@ export function PullToRefresh(element, opts) {
     setupDoms(), setupStyles(), setupEvents(), setupStatus();
     
     function setupEvents() {
-        window.addEventListener('touchstart', onTouchStart, false);
-        window.addEventListener('touchmove', onTouchMove, false);
-        window.addEventListener('touchend', onTouchEnd, false);
+        const supportPassive = supportsPassive();
+        console.log(supportPassive)
+        const passiveListener = supportsPassive() ? {passive: true, capture: false} : false;
+        const activeListener = passiveListener ? {passive: false, capture: false} : false;
+
+        window.addEventListener('touchstart', onTouchStart, passiveListener);
+        window.addEventListener('touchmove', onTouchMove, activeListener);
+        window.addEventListener('touchend', onTouchEnd, passiveListener);
     }
 
     function setupStatus() {
@@ -84,6 +89,7 @@ export function PullToRefresh(element, opts) {
                     height: 40px;
                     padding: 0 16px;
                     flex-basis: 100%;
+                    
                 }`.replace(/\s+/g, ' ');
     }
 
@@ -104,18 +110,20 @@ export function PullToRefresh(element, opts) {
         pageX = e.touches[0].pageX;
         pageY = e.touches[0].pageY;
 
+        const touchesDiff = pageY - touchesStart.y;
+
         if (!pageX || !pageY) return;
 
         if (typeof isScrolling === 'undefined') {
             isScrolling = !!(isScrolling || Math.abs(pageY - touchesStart.y) > Math.abs(pageX - touchesStart.x));
         }
 
-        if (!isScrolling) {
+        if (!isScrolling || moveY < 0 ) {
             direaction = null;
             return;
         }
 
-        if (moveY > 0 && !isLoading && scrollTop <= 1) {
+        if (touchesDiff > 0 && moveY > 0 && !isLoading && scrollTop <= 1) {
             e.preventDefault();
             direaction = 'down';
             if (moveY < options.dist) {
@@ -183,8 +191,20 @@ export function PullToRefresh(element, opts) {
         ptrInDom.innerHTML = ptrCurStatus.value;
     }
 
-
-    // changeHtml() {}
+    function supportsPassive() {
+        return (function () {
+            var supportsPassive = false;
+            try {
+                var opts = Object.defineProperty({}, 'passive', {
+                    get: function() {
+                        supportsPassive = true;
+                    }
+                });
+                window.addEventListener('testPassiveListener', null, opts);
+            } catch (e) {}
+            return supportsPassive;
+        })();
+    }
 
     function finishRefresh(over) {
         if (over) {
