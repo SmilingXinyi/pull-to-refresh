@@ -1,5 +1,5 @@
 /**
- * Created by wuhan01 on 2017/8/6.
+ * Created by SmilingXinyi on 2017/8/6.
  */
 
 export function PullToRefresh(element, opts) {
@@ -15,8 +15,10 @@ export function PullToRefresh(element, opts) {
         refreshingHtml: 'Refreshing',
         holdingHtml: 'Completion',
         holdingDuration: 800, // ms
-        onRefresh: () => {},
-        onPulling: () => {},
+        onRefresh: () => {
+        },
+        onPulling: () => {
+        },
         targetElement: null
     };
 
@@ -28,26 +30,22 @@ export function PullToRefresh(element, opts) {
         touchesStart = {},
         moveY = 0;
 
-    let ptrDom, ptrInDom;
+    var ptrDom, ptrInDom;
 
 
     let options = Object.assign({}, defaultOptions, opts);
 
-    setupDoms(), setupStyles(), setupEvents(), setupStatus();
-    
+    setupDoms(), setupStyles(), setupEvents();
+
     function setupEvents() {
         const supportPassive = supportsPassive();
-        console.log(supportPassive)
-        const passiveListener = supportsPassive() ? {passive: true, capture: false} : false;
+        const passiveListener = supportPassive ? {passive: true, capture: false} : false;
         const activeListener = passiveListener ? {passive: false, capture: false} : false;
 
         window.addEventListener('touchstart', onTouchStart, passiveListener);
         window.addEventListener('touchmove', onTouchMove, activeListener);
         window.addEventListener('touchend', onTouchEnd, passiveListener);
-    }
-
-    function setupStatus() {
-
+        document.addEventListener(options.keyPrefix + '-pull', callRefresh, true);
     }
 
     function setupDoms() {
@@ -76,10 +74,8 @@ export function PullToRefresh(element, opts) {
                     position: relative;
                     top: -40px;
                     height: 0;
-            
                     display: flex;
                     align-content: stretch;
-            
                     text-align: center;
                     width: 100%;
                     backgroundColor: '#fff'
@@ -89,7 +85,6 @@ export function PullToRefresh(element, opts) {
                     height: 40px;
                     padding: 0 16px;
                     flex-basis: 100%;
-                    
                 }`.replace(/\s+/g, ' ');
     }
 
@@ -118,7 +113,7 @@ export function PullToRefresh(element, opts) {
             isScrolling = !!(isScrolling || Math.abs(pageY - touchesStart.y) > Math.abs(pageX - touchesStart.x));
         }
 
-        if (!isScrolling || moveY < 0 ) {
+        if (!isScrolling || moveY < 0) {
             direaction = null;
             return;
         }
@@ -151,12 +146,14 @@ export function PullToRefresh(element, opts) {
     function onTouchEnd(e) {
         const refreshStyle =
             '-webkit-transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
-            'transform: translate3d(0px, ' + options.distRefresh + 'px, 0px);' +
+            'transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
             '-webkit-transition: all 300ms; ' +
-            'transition: all 300ms';
+            'transition: all 300ms; ';
         const overStyle =
-            'transform: translate3d(0px, 0px, 0px);' +
-            ' transition: all 300ms';
+            '-webkit-transform: translate3d(0px, 0px, 0px); ' +
+            'transform: translate3d(0px, 0px, 0px); ' +
+            '-webkit-transition: all 300ms; ' +
+            'transition: all 300ms;';
 
         if (moveY >= 48 && direaction === 'down' && !isLoading) {
             isLoading = true;
@@ -177,14 +174,22 @@ export function PullToRefresh(element, opts) {
 
     function onFinished() {
         isLoading = false;
-        const overStyle = 'transform: translate3d(0px, 0px, 0px); transition: all 300ms';
+        const overStyle =
+            '-webkit-transform: translate3d(0px, 0px, 0px); ' +
+            'transform: translate3d(0px, 0px, 0px); ' +
+            '-webkit-transition: all 300ms; ' +
+            'transition: all 300ms;';
         options.targetElement.setAttribute('style', overStyle);
         ptrDom.setAttribute('style', overStyle);
     }
 
     function callRefresh() {
         options.onRefresh();
-        const refreshStyle = 'transform: translate3d(0px, 48px, 0px); transition: all 300ms';
+        const refreshStyle =
+            '-webkit-transform: translate3d(0px, 48px, 0px); ' +
+            'transform: translate3d(0px, 48px, 0px); ' +
+            '-webkit-transition: all 300ms; ' +
+            'transition: all 300ms';
         isLoading = true;
         targetEle.setAttribute('style', refreshStyle);
         ptrDom.setAttribute('style', refreshStyle);
@@ -193,29 +198,30 @@ export function PullToRefresh(element, opts) {
 
     function supportsPassive() {
         return (function () {
-            var supportsPassive = false;
+            let supportsPassive = false;
             try {
-                var opts = Object.defineProperty({}, 'passive', {
-                    get: function() {
+                let opts = Object.defineProperty({}, 'passive', {
+                    get: function () {
                         supportsPassive = true;
                     }
                 });
                 window.addEventListener('testPassiveListener', null, opts);
-            } catch (e) {}
+            } catch (e) {
+            }
             return supportsPassive;
         })();
     }
 
-    function finishRefresh(over) {
-        if (over) {
+    function finishRefresh({over = false, isError = false, str = null}) {
+        if (over && !isError) {
             onFinished();
         }
         else {
-            ptrInDom.innerHTML = options.holdingHtml;
-            let t = setTimeout(_ => {
+            ptrInDom.innerHTML = str ? str : isError ? options.errorHtml : options.holdingHtml;
+            let t = setTimeout(() => {
                 clearTimeout(t);
                 onFinished();
-            }, options.holdingDuration)
+            }, options.holdingDuration);
         }
     }
 
@@ -223,4 +229,67 @@ export function PullToRefresh(element, opts) {
         finishRefresh,
         callRefresh
     }
+}
+
+
+export function RowToRefresh(element, handler, options) {
+    if (!element) throw new Error('No element option');
+    if (!handler) throw new Error('No handler option');
+
+    const defaultOptions = {
+        height: 60,
+        keyPrefix: '',
+        innerHTML: 'Refreshing',
+        offset: document.documentElement.clientHeight
+    };
+
+    const opts = Object.assign({}, defaultOptions, options);
+
+    window.addEventListener('scroll', checkPosition, true);
+
+    const targetElement = setupDoms();
+    var rtrDom;
+
+    let canFired = true,
+        direaction = null,
+        winScrollTop = 0,
+        oldScrollTop = 0;
+
+    function checkPosition(e) {
+        winScrollTop = window.scrollTop || window.pageYOffset;
+        direaction = winScrollTop > oldScrollTop ? 'down' : 'up';
+        oldScrollTop = winScrollTop;
+        let targetElementTop = updatePosition();
+        if (canFired && direaction === 'down' && oldScrollTop + opts.offset >= targetElementTop) {
+            canFired = false;
+            handler(function (fired) {
+                canFired = fired;
+            })
+        }
+    }
+
+    function updatePosition() {
+        return targetElement.getBoundingClientRect().top;
+    }
+
+    function setupDoms() {
+        rtrDom = document.createElement('div');
+        rtrDom.className = opts.keyPrefix || "" + '-row';
+        rtrDom.id = opts.keyPrefix || "" + '-row';
+        rtrDom.innerHTML = opts.innerHTML;
+        opts.height && (rtrDom.style.height = opts.height + 'px');
+        rtrDom.style.textAlign = 'center';
+        document.querySelector(element).parentNode.appendChild(rtrDom);
+        return rtrDom;
+    }
+
+    function changeInnerHtml(html) {
+        if (!html) throw new Error('empty html string!');
+        opts.innerHTML = html;
+        rtrDom.innerHTML = html;
+    }
+
+    return {
+        changeInnerHtml
+    };
 }

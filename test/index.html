@@ -9,7 +9,28 @@
             margin: 0;
             padding: 0;
         }
+
+        li {
+            height: 44px;
+        }
     </style>
+    <script type="text/javascript">
+        window.onerror = function (msg, url, line, col, error) {
+            // Note that col & error are new to the HTML 5 spec and may not be
+            // supported in every browser.  It worked for me in Chrome.
+            var extra = !col ? '' : '\ncolumn: ' + col;
+            extra += !error ? '' : '\nerror: ' + error;
+            // You can view the information in an alert to see things working like this:
+            alert("Error: " + msg + "\nurl: " + url + "\nline: " + line + extra);
+            // TODO: Report this error via ajax so you can keep track
+            //       of what pages have JS issues
+            console.log(error.stack)
+            var suppressErrorAlert = true;
+            // If you return true, then error alerts (like in older versions of
+            // Internet Explorer) will be suppressed.
+            return suppressErrorAlert;
+        };
+    </script>
 </head>
 <body>
 
@@ -20,27 +41,23 @@
         <li></li>
         <li></li>
         <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
     </ul>
 </div>
-
-<script type="text/javascript">
-    window.onerror = function(msg, url, line, col, error) {
-        // Note that col & error are new to the HTML 5 spec and may not be
-        // supported in every browser.  It worked for me in Chrome.
-        var extra = !col ? '' : '\ncolumn: ' + col;
-        extra += !error ? '' : '\nerror: ' + error;
-        // You can view the information in an alert to see things working like this:
-        alert("Error: " + msg + "\nurl: " + url + "\nline: " + line + extra);
-        // TODO: Report this error via ajax so you can keep track
-        //       of what pages have JS issues
-        console.log(error.stack)
-        var suppressErrorAlert = true;
-        // If you return true, then error alerts (like in older versions of
-        // Internet Explorer) will be suppressed.
-        return suppressErrorAlert;
-    };
-</script>
-
 <script src="../node_modules/systemjs/dist/system.js"></script>
 <script>
     SystemJS.config({
@@ -51,17 +68,31 @@
         transpiler: 'plugin-babel'
     });
     SystemJS.import('../src/index.js').then(m => {
-        let ptr = new m.PullToRefresh('.video-list', {
+        const ptr = m.PullToRefresh('.video-list', {
             dist: 60,
             distMax: 60 * 2,
             keyPrefix: 'video-list',
             onRefresh: function () {
                 let t = setTimeout(function () {
                     clearTimeout(t);
-                    ptr.finishRefresh();
+                    ptr.finishRefresh({str: '哈哈'});
                 }, 1000);
             }
         })
+
+        const rtr = m.RowToRefresh(
+            '.video-list',
+            function (result) {
+                let t = setTimeout(function () {
+                    clearTimeout(t);
+                    rtr.changeInnerHtml('Error')
+                    result(true);
+                }, 1000);
+            },
+            {
+                offset: document.documentElement.clientHeight,
+                height: 60
+            })
     }).catch(error => {
         throw error
     });
