@@ -14,6 +14,7 @@ export function PullToRefresh(element, opts) {
         corsssDistHtml: 'Release to refresh',
         refreshingHtml: 'Refreshing',
         holdingHtml: 'Completion',
+        errorHtml: 'Error',
         holdingDuration: 800, // ms
         onRefresh: () => {
         },
@@ -31,7 +32,6 @@ export function PullToRefresh(element, opts) {
         moveY = 0;
 
     var ptrDom, ptrInDom;
-
 
     let options = Object.assign({}, defaultOptions, opts);
 
@@ -56,6 +56,7 @@ export function PullToRefresh(element, opts) {
         ptrInDom = document.createElement('div');
         ptrInDom.className = options.keyPrefix + '-ptrInner';
         ptrInDom.id = options.keyPrefix + '-ptrInner';
+        ptrInDom.style.display = 'none';
 
         ptrDom.appendChild(ptrInDom);
 
@@ -120,6 +121,7 @@ export function PullToRefresh(element, opts) {
 
         if (touchesDiff > 0 && moveY > 0 && !isLoading && scrollTop <= 1) {
             e.preventDefault();
+            ptrInDom.style.display = 'block';
             direaction = 'down';
             if (moveY < options.dist) {
                 ptrInDom.innerHTML = options.beforeDistHtml;
@@ -155,7 +157,7 @@ export function PullToRefresh(element, opts) {
             '-webkit-transition: all 300ms; ' +
             'transition: all 300ms;';
 
-        if (moveY >= 48 && direaction === 'down' && !isLoading) {
+        if (moveY >= options.distRefresh && direaction === 'down' && !isLoading) {
             isLoading = true;
             options.targetElement.setAttribute('style', refreshStyle);
             ptrDom.setAttribute('style', refreshStyle);
@@ -181,13 +183,19 @@ export function PullToRefresh(element, opts) {
             'transition: all 300ms;';
         options.targetElement.setAttribute('style', overStyle);
         ptrDom.setAttribute('style', overStyle);
+        ptrDom.addEventListener('webkitTransitionEnd', hideByOne);
+    }
+
+    function hideByOne() {
+        ptrInDom.style.display = 'none';
+        this.removeEventListener('webkitTransitionEnd', hideByOne);
     }
 
     function callRefresh() {
         options.onRefresh();
         const refreshStyle =
-            '-webkit-transform: translate3d(0px, 48px, 0px); ' +
-            'transform: translate3d(0px, 48px, 0px); ' +
+            '-webkit-transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
+            'transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
             '-webkit-transition: all 300ms; ' +
             'transition: all 300ms';
         isLoading = true;
@@ -291,5 +299,5 @@ export function RowToRefresh(element, handler, options) {
 
     return {
         changeInnerHtml
-    };
+    }
 }
