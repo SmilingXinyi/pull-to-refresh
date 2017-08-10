@@ -3,9 +3,10 @@
  */
 
 export function PullToRefresh(element, opts) {
-    if (!element) return;
+    if (!element) throw new Error('No element option');
 
     const defaultOptions = {
+        height: 40,
         dist: 60,
         distMax: 60 * 2,
         distRefresh: 48,
@@ -42,9 +43,9 @@ export function PullToRefresh(element, opts) {
         const passiveListener = supportPassive ? {passive: true, capture: false} : false;
         const activeListener = passiveListener ? {passive: false, capture: false} : false;
 
-        window.addEventListener('touchstart', onTouchStart, passiveListener);
-        window.addEventListener('touchmove', onTouchMove, activeListener);
-        window.addEventListener('touchend', onTouchEnd, passiveListener);
+        options.targetElement.addEventListener('touchstart', onTouchStart, passiveListener);
+        options.targetElement.addEventListener('touchmove', onTouchMove, activeListener);
+        options.targetElement.addEventListener('touchend', onTouchEnd, passiveListener);
         document.addEventListener(options.keyPrefix + '-pull', callRefresh, true);
     }
 
@@ -73,7 +74,7 @@ export function PullToRefresh(element, opts) {
     function styleContent(prefix) {
         return `.${prefix}-ptr {
                     position: relative;
-                    top: -40px;
+                    top: -${options.height}px;
                     height: 0;
                     display: flex;
                     align-content: stretch;
@@ -83,7 +84,7 @@ export function PullToRefresh(element, opts) {
                 }
                 
                 .${prefix}-ptrInner {
-                    height: 40px;
+                    height: ${options.height}px;
                     padding: 0 16px;
                     flex-basis: 100%;
                 }`.replace(/\s+/g, ' ');
@@ -91,7 +92,7 @@ export function PullToRefresh(element, opts) {
 
     function onTouchStart(e) {
         if (!options.isLoading) {
-            options.isScrolling = undefined;
+            isScrolling = undefined;
             startY = e.touches[0].pageY;
             touchesStart.x = e.type === 'touchstart' ? e.targetTouches[0].pageX : e.pageX;
             touchesStart.y = e.type === 'touchstart' ? e.targetTouches[0].pageY : e.pageY;
@@ -123,12 +124,12 @@ export function PullToRefresh(element, opts) {
             e.preventDefault();
             ptrInDom.style.display = 'block';
             direaction = 'down';
-            if (moveY < options.dist) {
+            if (moveY < options.distRefresh) {
                 ptrInDom.innerHTML = options.beforeDistHtml;
             }
 
-            if (moveY >= options.dist) {
-                moveY = options.dist + (moveY - options.dist) / 3;
+            if (moveY >= options.distRefresh) {
+                moveY = options.distRefresh + (moveY - options.distRefresh) / 3;
                 ptrInDom.innerHTML = options.corsssDistHtml;
             }
 
@@ -136,10 +137,13 @@ export function PullToRefresh(element, opts) {
 
             const style =
                 '-webkit-transform: translate3d(0px, ' + Math.floor(moveY).toString() + 'px, 0px); ' +
-                'transform: translate3d(0px, ' + Math.floor(moveY).toString() + 'px, 0px);';
+                'transform: translate3d(0px, ' + Math.floor(moveY).toString() + 'px, 0px); ';
             options.targetElement.setAttribute('style', style);
 
-            ptrDom.setAttribute('style', style);
+            const rectStyle =
+                '-webkit-transform: translate3d(0px, ' + Math.floor(moveY).toString() + 'px, 0px); ' +
+                'transform: translate3d(0px, ' + Math.floor(moveY).toString() + 'px, 0px);';
+            ptrDom.setAttribute('style', rectStyle);
         }
 
         if (moveY < 0) direaction = 'up';
@@ -166,6 +170,7 @@ export function PullToRefresh(element, opts) {
         }
         else {
             if (direaction === 'down') {
+                ptrInDom.style.display = 'none';
                 options.targetElement.setAttribute('style', overStyle);
                 ptrDom.setAttribute('style', overStyle);
             }
@@ -182,11 +187,14 @@ export function PullToRefresh(element, opts) {
             '-webkit-transition: all 300ms; ' +
             'transition: all 300ms;';
         options.targetElement.setAttribute('style', overStyle);
-        ptrDom.setAttribute('style', overStyle);
-        ptrDom.addEventListener('webkitTransitionEnd', hideByOne);
+        ptrInDom.style.display = 'none';
     }
 
     function hideByOne() {
+        // Todo
+        ptrDom.setAttribute('style', overStyle);
+        ptrDom.addEventListener('webkitTransitionEnd', hideByOne);
+
         ptrInDom.style.display = 'none';
         this.removeEventListener('webkitTransitionEnd', hideByOne);
     }
@@ -225,7 +233,7 @@ export function PullToRefresh(element, opts) {
             onFinished();
         }
         else {
-            ptrInDom.innerHTML = str ? str : isError ? options.errorHtml : options.holdingHtml;
+            ptrInDom.innerHTML = isError ? options.errorHtml : str ? str : options.holdingHtml;
             let t = setTimeout(() => {
                 clearTimeout(t);
                 onFinished();
@@ -240,26 +248,26 @@ export function PullToRefresh(element, opts) {
 }
 
 
-export function RowToRefresh(element, handler, options) {
+export function RowToRefresh(element, handler, opts) {
     if (!element) throw new Error('No element option');
     if (!handler) throw new Error('No handler option');
 
     const defaultOptions = {
-        height: 60,
+        height: 40,
         keyPrefix: '',
         innerHTML: 'Refreshing',
+        errorHtml: 'Error',
         offset: document.documentElement.clientHeight
     };
 
-    const opts = Object.assign({}, defaultOptions, options);
+    const options = Object.assign({}, defaultOptions, opts);
 
     window.addEventListener('scroll', checkPosition, true);
 
     const targetElement = setupDoms();
-    var rtrDom;
+    var rtrDom, canFired = true;
 
-    let canFired = true,
-        direaction = null,
+    let direaction = null,
         winScrollTop = 0,
         oldScrollTop = 0;
 
@@ -268,7 +276,7 @@ export function RowToRefresh(element, handler, options) {
         direaction = winScrollTop > oldScrollTop ? 'down' : 'up';
         oldScrollTop = winScrollTop;
         let targetElementTop = updatePosition();
-        if (canFired && direaction === 'down' && oldScrollTop + opts.offset >= targetElementTop) {
+        if (canFired && direaction === 'down' && oldScrollTop + options.offset >= targetElementTop) {
             canFired = false;
             handler(function (fired) {
                 canFired = fired;
@@ -282,10 +290,10 @@ export function RowToRefresh(element, handler, options) {
 
     function setupDoms() {
         rtrDom = document.createElement('div');
-        rtrDom.className = opts.keyPrefix || "" + '-row';
-        rtrDom.id = opts.keyPrefix || "" + '-row';
-        rtrDom.innerHTML = opts.innerHTML;
-        opts.height && (rtrDom.style.height = opts.height + 'px');
+        rtrDom.className = (options.keyPrefix || "") + '-row';
+        rtrDom.id = (options.keyPrefix || "") + '-row';
+        rtrDom.innerHTML = options.innerHTML;
+        options.height && (rtrDom.style.height = options.height + 'px');
         rtrDom.style.textAlign = 'center';
         document.querySelector(element).parentNode.appendChild(rtrDom);
         return rtrDom;
@@ -293,11 +301,22 @@ export function RowToRefresh(element, handler, options) {
 
     function changeInnerHtml(html) {
         if (!html) throw new Error('empty html string!');
-        opts.innerHTML = html;
+        options.innerHTML = html;
         rtrDom.innerHTML = html;
     }
 
+    function showErrorHtml() {
+        rtrDom.innerHTML = options.errorHtml;
+    }
+
+    function reset() {
+        rtrDom.innerHTML = options.innerHTML;
+        canFired = true;
+    }
+
     return {
-        changeInnerHtml
+        changeInnerHtml,
+        showErrorHtml,
+        reset
     }
 }
