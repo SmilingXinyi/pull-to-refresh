@@ -280,6 +280,7 @@ export function RowToRefresh(element, handler, opts) {
             canFired = false;
             handler(function (fired) {
                 canFired = fired;
+                if (!canFired) showErrorHtml();
             })
         }
     }
