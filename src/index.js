@@ -14,6 +14,8 @@ export function PullToRefresh(element, opts) {
         beforeDistHtml: 'Pull down to refresh',
         corsssDistHtml: 'Release to refresh',
         refreshingHtml: 'Refreshing',
+        holdingHtmlBefore: '',
+        holdingHtmlAfter: '',
         holdingHtml: 'Completion',
         errorHtml: 'Error',
         holdingDuration: 800, // ms
@@ -233,7 +235,7 @@ export function PullToRefresh(element, opts) {
             onFinished();
         }
         else {
-            ptrInDom.innerHTML = isError ? options.errorHtml : str ? str : options.holdingHtml;
+            ptrInDom.innerHTML = isError ? options.errorHtml : str ? (options.holdingHtmlBefore + str + options.holdingHtmlAfter) : options.holdingHtml;
             let t = setTimeout(() => {
                 clearTimeout(t);
                 onFinished();
@@ -286,7 +288,7 @@ export function RowToRefresh(element, handler, opts) {
     }
 
     function updatePosition() {
-        return targetElement.getBoundingClientRect().top;
+        return targetElement.offsetTop;
     }
 
     function setupDoms() {
