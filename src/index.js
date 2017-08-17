@@ -23,6 +23,9 @@ export function PullToRefresh(element, opts) {
         },
         onPulling: () => {
         },
+        onCall: () => {
+
+        },
         targetElement: null
     };
 
@@ -30,11 +33,10 @@ export function PullToRefresh(element, opts) {
         direaction = null,
         isLoading = false,
         isScrolling,
-        isPending = true,
         touchesStart = {},
         moveY = 0;
 
-    var ptrDom, ptrInDom;
+    var ptrDom, ptrInDom, isPending = true;
 
     let options = Object.assign({}, defaultOptions, opts);
 
@@ -48,7 +50,7 @@ export function PullToRefresh(element, opts) {
         options.targetElement.addEventListener('touchstart', onTouchStart, passiveListener);
         options.targetElement.addEventListener('touchmove', onTouchMove, activeListener);
         options.targetElement.addEventListener('touchend', onTouchEnd, passiveListener);
-        document.addEventListener(options.keyPrefix + '-pull', callRefresh, true);
+        document.addEventListener('pull', callRefresh, true);
     }
 
     function setupDoms() {
@@ -202,6 +204,7 @@ export function PullToRefresh(element, opts) {
     }
 
     function callRefresh() {
+        options.onCall();
         options.onRefresh();
         const refreshStyle =
             '-webkit-transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
@@ -245,7 +248,10 @@ export function PullToRefresh(element, opts) {
 
     return {
         finishRefresh,
-        callRefresh
+        callRefresh,
+        currentStatus () {
+
+        }
     }
 }
 
@@ -259,7 +265,8 @@ export function RowToRefresh(element, handler, opts) {
         keyPrefix: '',
         innerHTML: 'Refreshing',
         errorHtml: 'Error',
-        offset: document.documentElement.clientHeight
+        offset: document.documentElement.clientHeight,
+        onCall: () => {}
     };
 
     const options = Object.assign({}, defaultOptions, opts);
@@ -274,6 +281,7 @@ export function RowToRefresh(element, handler, opts) {
         oldScrollTop = 0;
 
     function checkPosition(e) {
+        options.onCall();
         winScrollTop = window.scrollTop || window.pageYOffset;
         direaction = winScrollTop > oldScrollTop ? 'down' : 'up';
         oldScrollTop = winScrollTop;
