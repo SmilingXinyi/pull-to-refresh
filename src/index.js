@@ -24,7 +24,6 @@ export function PullToRefresh(element, opts) {
         onPulling: () => {
         },
         onCall: () => {
-
         },
         targetElement: null
     };
@@ -39,6 +38,22 @@ export function PullToRefresh(element, opts) {
     var ptrDom, ptrInDom, isPending = true;
 
     let options = Object.assign({}, defaultOptions, opts);
+
+    function callRefresh(e) {
+        if (options.onCall(element, e)) {
+            options.onRefresh();
+            const refreshStyle =
+                '-webkit-transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
+                'transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
+                '-webkit-transition: all 300ms; ' +
+                'transition: all 300ms';
+            isLoading = true;
+            options.targetElement.setAttribute('style', refreshStyle);
+            ptrDom.setAttribute('style', refreshStyle);
+            ptrInDom.style.display = 'block';
+            ptrInDom.innerHTML = options.refreshingHtml;
+        }
+    }
 
     setupDoms(), setupStyles(), setupEvents();
 
@@ -203,20 +218,6 @@ export function PullToRefresh(element, opts) {
         this.removeEventListener('webkitTransitionEnd', hideByOne);
     }
 
-    function callRefresh() {
-        options.onCall();
-        options.onRefresh();
-        const refreshStyle =
-            '-webkit-transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
-            'transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
-            '-webkit-transition: all 300ms; ' +
-            'transition: all 300ms';
-        isLoading = true;
-        targetEle.setAttribute('style', refreshStyle);
-        ptrDom.setAttribute('style', refreshStyle);
-        ptrInDom.innerHTML = ptrCurStatus.value;
-    }
-
     function supportsPassive() {
         return (function () {
             let supportsPassive = false;
@@ -281,12 +282,11 @@ export function RowToRefresh(element, handler, opts) {
         oldScrollTop = 0;
 
     function checkPosition(e) {
-        options.onCall();
         winScrollTop = window.scrollTop || window.pageYOffset;
         direaction = winScrollTop > oldScrollTop ? 'down' : 'up';
         oldScrollTop = winScrollTop;
         let targetElementTop = updatePosition();
-        if (canFired && direaction === 'down' && oldScrollTop + options.offset >= targetElementTop) {
+        if (canFired && options.onCall(e) && direaction === 'down' && oldScrollTop + options.offset >= targetElementTop) {
             canFired = false;
             handler(function (fired) {
                 canFired = fired;
