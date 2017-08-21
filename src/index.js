@@ -11,6 +11,7 @@ export function PullToRefresh(element, opts) {
         distMax: 60 * 2,
         distRefresh: 48,
         keyPrefix: '',
+        specialClass: null,
         beforeDistHtml: 'Pull down to refresh',
         corsssDistHtml: 'Release to refresh',
         refreshingHtml: 'Refreshing',
@@ -71,6 +72,9 @@ export function PullToRefresh(element, opts) {
     function setupDoms() {
         ptrDom = document.createElement('div');
         ptrDom.className = options.keyPrefix + '-ptr';
+        if (options.specialClass && options.specialClass !== '') {
+            ptrDom.className += ' ' + options.specialClass;
+        }
         ptrDom.id = options.keyPrefix + '-ptr';
 
         ptrInDom = document.createElement('div');
@@ -85,9 +89,12 @@ export function PullToRefresh(element, opts) {
     }
 
     function setupStyles() {
-        let style = document.createElement('style');
-        style.textContent = styleContent(options.keyPrefix);
-        document.head.appendChild(style);
+        if (!document.querySelector('#' + options.keyPrefix)) {
+            let style = document.createElement('style');
+            style.id = options.keyPrefix;
+            style.textContent = styleContent(options.keyPrefix);
+            document.head.appendChild(style);
+        }
     }
 
     function styleContent(prefix) {
@@ -286,7 +293,8 @@ export function RowToRefresh(element, handler, opts) {
         direaction = winScrollTop > oldScrollTop ? 'down' : 'up';
         oldScrollTop = winScrollTop;
         let targetElementTop = updatePosition();
-        if (canFired && options.onCall(e) && direaction === 'down' && oldScrollTop + options.offset >= targetElementTop) {
+        console.log('--------')
+        if (canFired && direaction === 'down' && (oldScrollTop + options.offset >= targetElementTop) && options.onCall(e)) {
             canFired = false;
             handler(function (fired) {
                 canFired = fired;
