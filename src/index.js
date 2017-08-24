@@ -206,6 +206,7 @@ export function PullToRefresh(element, opts) {
     }
 
     function onFinished() {
+        options.scrollLog && options.scrollLog();
         isLoading = false;
         const overStyle =
             '-webkit-transform: translate3d(0px, 0px, 0px); ' +
@@ -265,6 +266,7 @@ export function PullToRefresh(element, opts) {
 
 
 export function RowToRefresh(element, handler, opts) {
+    console.trace()
     if (!element) throw new Error('No element option');
     if (!handler) throw new Error('No handler option');
 
@@ -292,11 +294,14 @@ export function RowToRefresh(element, handler, opts) {
         winScrollTop = window.scrollTop || window.pageYOffset;
         direaction = winScrollTop > oldScrollTop ? 'down' : 'up';
         oldScrollTop = winScrollTop;
+        if (!targetElement) return;
         let targetElementTop = updatePosition();
-        console.log('--------')
         if (canFired && direaction === 'down' && (oldScrollTop + options.offset >= targetElementTop) && options.onCall(e)) {
             canFired = false;
+            console.log(handler)
             handler(function (fired) {
+                console.log('==========================================')
+                options.scrollLog && options.scrollLog();
                 canFired = fired;
                 if (!canFired) showErrorHtml();
             })
@@ -314,6 +319,7 @@ export function RowToRefresh(element, handler, opts) {
         rtrDom.innerHTML = options.innerHTML;
         options.height && (rtrDom.style.height = options.height + 'px');
         rtrDom.style.textAlign = 'center';
+        console.trace()
         document.querySelector(element).parentNode.appendChild(rtrDom);
         return rtrDom;
     }
@@ -326,6 +332,9 @@ export function RowToRefresh(element, handler, opts) {
 
     function showErrorHtml() {
         rtrDom.innerHTML = options.errorHtml;
+        document.querySelector('#tapRefresh').removeEventListener('touchend', options.refresh);
+        document.querySelector('#tapRefresh').addEventListener('touchend', options.refresh);
+        return false;
     }
 
     function reset() {
