@@ -42,6 +42,7 @@ export function PullToRefresh(element, opts) {
 
     function callRefresh(e) {
         if (options.onCall(element, e)) {
+            options.scrollLog && options.scrollLog();
             options.onRefresh();
             const refreshStyle =
                 '-webkit-transform: translate3d(0px, ' + options.distRefresh + 'px, 0px); ' +
@@ -192,6 +193,7 @@ export function PullToRefresh(element, opts) {
             options.targetElement.setAttribute('style', refreshStyle);
             ptrDom.setAttribute('style', refreshStyle);
             ptrInDom.innerHTML = options.refreshingHtml;
+            options.scrollLog && options.scrollLog();
             options.onRefresh();
         }
         else {
@@ -206,7 +208,6 @@ export function PullToRefresh(element, opts) {
     }
 
     function onFinished() {
-        options.scrollLog && options.scrollLog();
         isLoading = false;
         const overStyle =
             '-webkit-transform: translate3d(0px, 0px, 0px); ' +
@@ -266,9 +267,7 @@ export function PullToRefresh(element, opts) {
 
 
 export function RowToRefresh(element, handler, opts) {
-    console.trace()
     if (!element) throw new Error('No element option');
-    if (!handler) throw new Error('No handler option');
 
     const defaultOptions = {
         height: 40,
@@ -297,11 +296,10 @@ export function RowToRefresh(element, handler, opts) {
         if (!targetElement) return;
         let targetElementTop = updatePosition();
         if (canFired && direaction === 'down' && (oldScrollTop + options.offset >= targetElementTop) && options.onCall(e)) {
+            console.log('一条日志');
             canFired = false;
-            console.log(handler)
-            handler(function (fired) {
-                console.log('==========================================')
-                options.scrollLog && options.scrollLog();
+            options.scrollLog && options.scrollLog();
+            handler && handler(function (fired) {
                 canFired = fired;
                 if (!canFired) showErrorHtml();
             })
@@ -319,7 +317,6 @@ export function RowToRefresh(element, handler, opts) {
         rtrDom.innerHTML = options.innerHTML;
         options.height && (rtrDom.style.height = options.height + 'px');
         rtrDom.style.textAlign = 'center';
-        console.trace()
         document.querySelector(element).parentNode.appendChild(rtrDom);
         return rtrDom;
     }
@@ -342,9 +339,15 @@ export function RowToRefresh(element, handler, opts) {
         canFired = true;
     }
 
+    function onLoaded(fired) {
+        canFired = fired;
+        if (!canFired) showErrorHtml();
+    }
+
     return {
         changeInnerHtml,
         showErrorHtml,
-        reset
+        reset,
+        onLoaded
     }
 }
